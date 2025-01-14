@@ -1,0 +1,2 @@
+---
+_aws_vpc_subnets_cidr_base: "{{ _aws_vpc_cidr_base }}.2" # each env has its own /24 by default

@@ -1,0 +1,2 @@
+---
+_infra_name: SHORTNAME # the name of this infra (typically the same string as the boto profile name)

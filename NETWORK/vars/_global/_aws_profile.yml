@@ -1,0 +1,2 @@
+---
+_aws_profile: SHORTNAME # the boto profile to use for AWS access

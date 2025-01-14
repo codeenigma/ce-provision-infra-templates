@@ -1,0 +1,19 @@
+skip_list:
+  - '204'
+  - '301'
+  - '701'
+  - '306'
+  - unnamed-task
+  - risky-file-permissions
+  - role-name
+  - no-handler
+  - var-naming
+  - no-jinja-nesting
+  - command-instead-of-module
+
+mock_modules:
+  - iam_alias
+
+extra_vars:
+  _ce_provision_base_dir: "/home/controller/ce-provision"
+  _ce_provision_build_dir: "/opt/gitlab-runner/builds/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"

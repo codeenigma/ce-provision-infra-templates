@@ -1,0 +1,3 @@
+---
+# Inherits from ce-provision, can be overridden in ce-provision-config or here to extend the groups.
+_global_security_groups: "{{ _security_groups_defaults }}" # default set of security groups from ce-provision

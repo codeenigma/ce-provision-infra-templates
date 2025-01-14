@@ -1,0 +1,191 @@
+---
+# Pre-filled vars for the run pipeline page
+variables:
+  ENV:
+    value: "dev"
+    options:
+      - "util"
+      - "dev"
+      - "stage"
+      - "prod"
+    description: "Defaults to building dev infra, you can specify the environment to build. To only build the AWS components set TRIGGER_NETWORK_BUILD to 'yes' and do not provide a playbook. Also required for individual host builds."
+  TRIGGER_NETWORK_BUILD:
+    value: "no"
+    options:
+      - "yes"
+      - "no"
+    description: "Set to yes to build only the AWS components for an environment or the surrounding network infra prior to a single build."
+  PLAY:
+    value: ""
+    description: "To build an individual host give the relative path to the playbook or full path to ce-provision-config playbook. In the latter case, be sure to provide the --absolute-playbook-path parameter."
+  RESOURCE:
+    value: ""
+    description: "Corresponds to the expected _aws_resource_name of the individual host to build, also needs to match the variables folder name."
+  REGION:
+    value: "eu-west-1"
+    options:
+      - "eu-west-1"
+    description: "AWS region to pass to Ansible when building an individual host."
+  CE_PROVISION_BRANCH:
+    value: "2.x"
+    options:
+      - "1.x"
+      - "2.x"
+      - "devel-1.x"
+      - "devel-2.x"
+    description: "Branch of ce-provision/config to use, change to 'devel' versions to use bleeding edge functionality."
+  CE_PROVISION_CONFIG_BRANCH:
+    value: "2.x"
+    options:
+      - "1.x"
+      - "2.x"
+      - "devel-1.x"
+      - "devel-2.x"
+    description: "Branch of ce-provision-config to use, change to 'devel' versions to use bleeding edge functionality."
+  EXTRA_PARAMS:
+    value: "--force --python-interpreter /home/controller/ce-python/bin/python3"
+    description: "Extra parameters to pass to ce-provision on a single build, e.g. --verbose or --force"
+  BASH_VARS:
+    value: ""
+    description: "Bash variables to set prior to execution of a single build, e.g. ANSIBLE_KEEP_REMOTE_FILES=1 (leave a trailing space!)"
+
+workflow:
+  name: '$PIPELINE_NAME'
+  rules:
+    - if: '$ENV == "none"'
+      variables:
+        PIPELINE_NAME: "lint"
+    - if: '$CI_COMMIT_BRANCH == "apply" && $ENV != "none" && ($PLAY == null || $PLAY == "") && $TRIGGER_NETWORK_BUILD == "no"'
+      variables:
+        PIPELINE_NAME: "apply_environment: $ENV | $CI_COMMIT_TITLE"
+    - if: '$CI_COMMIT_BRANCH == "apply" && $TRIGGER_NETWORK_BUILD == "yes" && ($PLAY == null || $PLAY == "")'
+      variables:
+        PIPELINE_NAME: "apply_aws: $ENV | $CI_COMMIT_TITLE"
+    - if: '$CI_COMMIT_BRANCH == "apply" && ($PLAY =~ /^./ && $RESOURCE =~ /^./) && $TRIGGER_NETWORK_BUILD == "yes"'
+      variables:
+        PIPELINE_NAME: "single_with_network: $RESOURCE | $CI_COMMIT_MESSAGE"
+    - if: '$CI_COMMIT_BRANCH == "apply" && ($PLAY =~ /^./ && $RESOURCE =~ /^./) && $TRIGGER_NETWORK_BUILD == "no"'
+      variables:
+        PIPELINE_NAME: "$RESOURCE | $CI_COMMIT_TITLE"
+
+before_script:
+  - export $BASH_VARS
+
+stages:
+  - test
+  - apply
+
+yamllint:
+  stage: test
+  script:
+    - |
+      for f in /etc/profile.d/*; do
+        . "$f"
+      done
+    - yamllint "$CI_PROJECT_DIR"
+  rules:
+    - if: '$ENV == "none"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+
+ansiblelint_util:
+  stage: test
+  script:
+    - |
+      for f in /etc/profile.d/*; do
+        . "$f"
+      done
+    - export ANSIBLE_ROLES_PATH="/home/controller/ce-provision/roles:/home/controller/ce-provision/config/private:/home/controller/.ansible/roles"
+    - export ANSIBLE_COLLECTIONS_PATH="/home/controller/.ansible/collections/ansible_collections"
+    - ansible-lint "$CI_PROJECT_DIR/util.yml"
+  rules:
+    - if: '$ENV == "none"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+
+ansiblelint_dev:
+  stage: test
+  script:
+    - |
+      for f in /etc/profile.d/*; do
+        . "$f"
+      done
+    - export ANSIBLE_ROLES_PATH="/home/controller/ce-provision/roles:/home/controller/ce-provision/config/private:/home/controller/.ansible/roles"
+    - export ANSIBLE_COLLECTIONS_PATH="/home/controller/.ansible/collections/ansible_collections"
+    - ansible-lint "$CI_PROJECT_DIR/dev.yml"
+  rules:
+    - if: '$ENV == "none"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+
+ansiblelint_stage:
+  stage: test
+  script:
+    - |
+      for f in /etc/profile.d/*; do
+        . "$f"
+      done
+    - export ANSIBLE_ROLES_PATH="/home/controller/ce-provision/roles:/home/controller/ce-provision/config/private:/home/controller/.ansible/roles"
+    - export ANSIBLE_COLLECTIONS_PATH="/home/controller/.ansible/collections/ansible_collections"
+    - ansible-lint "$CI_PROJECT_DIR/stage.yml"
+  rules:
+    - if: '$ENV == "none"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+
+ansiblelint_prod:
+  stage: test
+  script:
+    - |
+      for f in /etc/profile.d/*; do
+        . "$f"
+      done
+    - export ANSIBLE_ROLES_PATH="/home/controller/ce-provision/roles:/home/controller/ce-provision/config/private:/home/controller/.ansible/roles"
+    - export ANSIBLE_COLLECTIONS_PATH="/home/controller/.ansible/collections/ansible_collections"
+    - ansible-lint "$CI_PROJECT_DIR/prod.yml"
+  rules:
+    - if: '$ENV == "none"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+
+apply_environment:
+  stage: apply
+  script:
+    - chown -R controller:controller $CI_PROJECT_DIR
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook $ENV.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME $EXTRA_PARAMS
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "apply" && $ENV != "none" && ($PLAY == null || $PLAY == "") && $TRIGGER_NETWORK_BUILD == "no"'
+
+apply_aws:
+  stage: apply
+  script:
+    - chown -R controller:controller $CI_PROJECT_DIR
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_global/global.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_region/region.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "apply" && $TRIGGER_NETWORK_BUILD == "yes" && ($PLAY == null || $PLAY == "")'
+
+apply_single_with_network:
+  stage: apply
+  script:
+    - chown -R controller:controller $CI_PROJECT_DIR
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_global/global.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_region/region.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV, _aws_resource_name: $RESOURCE}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook $PLAY --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME $EXTRA_PARAMS
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "apply" && ($PLAY =~ /^./ && $RESOURCE =~ /^./) && $TRIGGER_NETWORK_BUILD == "yes"'
+
+apply_single:
+  stage: apply
+  script:
+    - chown -R controller:controller $CI_PROJECT_DIR
+    - |
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV, _aws_resource_name: $RESOURCE}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook $PLAY --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME $EXTRA_PARAMS
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "apply" && ($PLAY =~ /^./ && $RESOURCE =~ /^./) && $TRIGGER_NETWORK_BUILD == "no"'

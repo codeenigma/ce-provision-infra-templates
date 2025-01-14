@@ -1,0 +1,3 @@
+---
+aws_cloudwatch_log_group:
+  retention: 731 # log retention period for this environment in days

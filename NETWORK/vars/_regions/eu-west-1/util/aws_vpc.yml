@@ -1,0 +1,3 @@
+---
+aws_vpc:
+  security_groups: "{{ _global_security_groups }}" # set in _global

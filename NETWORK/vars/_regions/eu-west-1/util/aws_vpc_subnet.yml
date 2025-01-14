@@ -1,0 +1,16 @@
+---
+# If you want the same subnet values for each env, this can be moved to _global or _regions
+aws_vpc_subnet:
+  subnets:
+    - az: a
+      cidr_block: "{{ _aws_vpc_subnets_cidr_base }}.0/26"
+      name: "{{ _infra_name }}-{{ _env_type }}-a"
+      nat_ipv4: false # set to true for create a NAT gateway, note, NAT gateways are expensive!
+    - az: b
+      cidr_block: "{{ _aws_vpc_subnets_cidr_base }}.64/26"
+      name: "{{ _infra_name }}-{{ _env_type }}-b"
+      nat_ipv4: false
+    - az: c
+      cidr_block: "{{ _aws_vpc_subnets_cidr_base }}.128/26"
+      name: "{{ _infra_name }}-{{ _env_type }}-c"
+      nat_ipv4: false

@@ -1,0 +1,2 @@
+---
+_aws_vpc_cidr_base: CIDR_BASE # e.g. 10.116
