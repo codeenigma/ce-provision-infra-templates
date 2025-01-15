@@ -162,9 +162,9 @@ apply_aws:
   script:
     - chown -R controller:controller $CI_PROJECT_DIR
     - |
-      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_global/global.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/aws_global/aws_global.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
     - |
-      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_region/region.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/plays/aws_region/aws_region.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
   rules:
     - if: '$CI_COMMIT_BRANCH == "apply" && $TRIGGER_NETWORK_BUILD == "yes" && ($PLAY == null || $PLAY == "")'
 
@@ -173,9 +173,9 @@ apply_single_with_network:
   script:
     - chown -R controller:controller $CI_PROJECT_DIR
     - |
-      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_global/global.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/aws_global/aws_global.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
     - |
-      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/config/plays/_region/region.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
+      sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook /home/controller/ce-provision/plays/aws_region/aws_region.yml --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME --absolute-playbook-path --force
     - |
       sudo -u controller $BASH_VARS/bin/sh /home/controller/ce-provision/scripts/provision.sh --repo SHORTNAME --ansible-extra-vars "{_aws_region: $REGION, _env_type: $ENV, _aws_resource_name: $RESOURCE}" --workspace "$CI_PROJECT_DIR" --branch apply --playbook $PLAY --own-branch $CE_PROVISION_BRANCH --config-branch $CE_PROVISION_CONFIG_BRANCH --boto-profile SHORTNAME $EXTRA_PARAMS
   rules:
