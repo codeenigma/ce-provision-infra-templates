@@ -3,4 +3,4 @@
 
 ### General setup/infra/networking for region.
 - name: Configure AWS region.
-  ansible.builtin.import_playbook: "{{ _ce_provision_base_dir }}/config/plays/_region/region.yml"
+  ansible.builtin.import_playbook: "{{ _ce_provision_base_dir }}/plays/aws_region/aws_region.yml"
